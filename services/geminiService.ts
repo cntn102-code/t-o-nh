@@ -1,15 +1,17 @@
+
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import type { GenerateContentResponse, Part } from "@google/genai";
 import type { IdPhotoOptions, BeautifyPhotoParams } from '../types';
 
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable is not set");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
 const editModel = 'gemini-2.5-flash-image';
+
+const getAiClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key chưa được thiết lập. Vui lòng nhấn nút 'API Key' trên thanh menu để chọn hoặc cấu hình biến môi trường API_KEY.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 const fileToGenerativePart = (dataUrl: string): Part => {
   const [header, data] = dataUrl.split(',');
@@ -28,6 +30,7 @@ const performImageEdit = async (prompt: string, ...images: string[]): Promise<st
     throw new Error("At least one image must be provided.");
   }
 
+  const ai = getAiClient();
   const imageParts = images.map(fileToGenerativePart);
   const textPart: Part = { text: prompt };
 
@@ -63,6 +66,7 @@ export const generateImageFromText = async (
   prompt: string,
   config: { aspectRatio: '1:1' | '16:9' | '9:16' | '3:4' | '4:3', numberOfImages: number }
 ): Promise<string[]> => {
+  const ai = getAiClient();
   const response = await ai.models.generateImages({
     model: 'imagen-4.0-generate-001',
     prompt: prompt,
@@ -503,6 +507,7 @@ ${textRequirement}
         fullPrompt += `\nPoster cuối cùng phải có tỷ lệ khung hình là ${aspectRatio}.`;
         return performImageEdit(fullPrompt, ...allImages);
     } else {
+        const ai = getAiClient();
         const response = await ai.models.generateImages({
             model: 'imagen-4.0-generate-001',
             prompt: fullPrompt,
@@ -622,6 +627,7 @@ ${backgroundImage ? `- The last image is a reference for the background.` : ''}
 
 
 export const suggestSlogans = async (topic: string): Promise<string[]> => {
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: `Generate 3 short, catchy slogans in Vietnamese for a poster about "${topic}".`,
@@ -678,6 +684,7 @@ export const suggestPrompts = async (
     
     parts.push({ text: userInstruction });
 
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: { parts },
@@ -713,6 +720,7 @@ export const suggestProductBackgrounds = async (productImage: string, productNam
     const imagePart = fileToGenerativePart(productImage);
     const textPart = { text: `You are a creative director. Analyze this image of a product named "${productName || 'this product'}". Based on the image, generate 3 short, creative background ideas in Vietnamese for an advertisement. The ideas should be suitable for showcasing the product effectively.` };
     
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: { parts: [imagePart, textPart] },
