@@ -6,9 +6,12 @@ import type { IdPhotoOptions, BeautifyPhotoParams } from '../types';
 const editModel = 'gemini-2.5-flash-image';
 
 const getAiClient = () => {
-  const apiKey = process.env.API_KEY;
+  // Prioritize the key from LocalStorage if the user has entered one manually
+  const localKey = localStorage.getItem('gemini_api_key');
+  const apiKey = localKey || process.env.API_KEY;
+
   if (!apiKey) {
-    throw new Error("API Key chưa được thiết lập. Vui lòng nhấn nút 'API Key' trên thanh menu để chọn hoặc cấu hình biến môi trường API_KEY.");
+    throw new Error("API Key chưa được thiết lập. Vui lòng nhấn nút 'API Key' trên thanh menu để nhập mã khóa.");
   }
   return new GoogleGenAI({ apiKey });
 };
